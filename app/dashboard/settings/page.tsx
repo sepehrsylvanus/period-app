@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -44,7 +44,6 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Progress } from "@/components/ui/progress";
-import { useLocalStorage } from "@/hooks/use-local-storage";
 import {
   Download,
   Upload,
@@ -53,9 +52,6 @@ import {
   EyeOff,
   Camera,
   Save,
-  Moon,
-  Sun,
-  Smartphone,
   Mail,
   Key,
   FileText,
@@ -109,59 +105,62 @@ interface NotificationSettings {
   quietHoursEnd: string;
 }
 
+// Default values
+const defaultUserProfile: UserProfile = {
+  firstName: "Demo",
+  lastName: "User",
+  email: "demo@example.com",
+  dateOfBirth: "",
+  phone: "",
+  bio: "",
+  avatar: "",
+};
+
+const defaultAppSettings: AppSettings = {
+  theme: "light",
+  language: "en",
+  timezone: "UTC",
+  dateFormat: "MM/dd/yyyy",
+  temperatureUnit: "celsius",
+  cycleLength: 28,
+  periodLength: 5,
+  lutealPhase: 14,
+};
+
+const defaultPrivacySettings: PrivacySettings = {
+  dataSharing: false,
+  analytics: true,
+  marketing: false,
+  profileVisibility: "private",
+  twoFactorAuth: false,
+  biometricAuth: false,
+};
+
+const defaultNotificationSettings: NotificationSettings = {
+  pushNotifications: true,
+  emailNotifications: false,
+  smsNotifications: false,
+  periodReminders: true,
+  ovulationReminders: true,
+  appointmentReminders: true,
+  medicationReminders: true,
+  weeklyReports: false,
+  monthlyReports: true,
+  quietHoursEnabled: true,
+  quietHoursStart: "22:00",
+  quietHoursEnd: "07:00",
+};
+
 export default function SettingsPage() {
-  const [userProfile, setUserProfile] = useLocalStorage<UserProfile>(
-    "user-profile",
-    {
-      firstName: "Demo",
-      lastName: "User",
-      email: "demo@example.com",
-      dateOfBirth: "",
-      phone: "",
-      bio: "",
-      avatar: "",
-    }
+  const [userProfile, setUserProfile] =
+    useState<UserProfile>(defaultUserProfile);
+  const [appSettings, setAppSettings] =
+    useState<AppSettings>(defaultAppSettings);
+  const [privacySettings, setPrivacySettings] = useState<PrivacySettings>(
+    defaultPrivacySettings
   );
-
-  const [appSettings, setAppSettings] = useLocalStorage<AppSettings>(
-    "app-settings",
-    {
-      theme: "light",
-      language: "en",
-      timezone: "UTC",
-      dateFormat: "MM/dd/yyyy",
-      temperatureUnit: "celsius",
-      cycleLength: 28,
-      periodLength: 5,
-      lutealPhase: 14,
-    }
-  );
-
-  const [privacySettings, setPrivacySettings] =
-    useLocalStorage<PrivacySettings>("privacy-settings", {
-      dataSharing: false,
-      analytics: true,
-      marketing: false,
-      profileVisibility: "private",
-      twoFactorAuth: false,
-      biometricAuth: false,
-    });
-
   const [notificationSettings, setNotificationSettings] =
-    useLocalStorage<NotificationSettings>("notification-settings", {
-      pushNotifications: true,
-      emailNotifications: false,
-      smsNotifications: false,
-      periodReminders: true,
-      ovulationReminders: true,
-      appointmentReminders: true,
-      medicationReminders: true,
-      weeklyReports: false,
-      monthlyReports: true,
-      quietHoursEnabled: true,
-      quietHoursStart: "22:00",
-      quietHoursEnd: "07:00",
-    });
+    useState<NotificationSettings>(defaultNotificationSettings);
 
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
   const [isExportDataOpen, setIsExportDataOpen] = useState(false);
@@ -175,6 +174,78 @@ export default function SettingsPage() {
     newPassword: "",
     confirmPassword: "",
   });
+
+  // Load data from localStorage on mount
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const savedUserProfile = localStorage.getItem("user-profile");
+      const savedAppSettings = localStorage.getItem("app-settings");
+      const savedPrivacySettings = localStorage.getItem("privacy-settings");
+      const savedNotificationSettings = localStorage.getItem(
+        "notification-settings"
+      );
+
+      if (savedUserProfile) {
+        try {
+          setUserProfile(JSON.parse(savedUserProfile));
+        } catch (error) {
+          console.error("Error parsing user profile:", error);
+        }
+      }
+
+      if (savedAppSettings) {
+        try {
+          setAppSettings(JSON.parse(savedAppSettings));
+        } catch (error) {
+          console.error("Error parsing app settings:", error);
+        }
+      }
+
+      if (savedPrivacySettings) {
+        try {
+          setPrivacySettings(JSON.parse(savedPrivacySettings));
+        } catch (error) {
+          console.error("Error parsing privacy settings:", error);
+        }
+      }
+
+      if (savedNotificationSettings) {
+        try {
+          setNotificationSettings(JSON.parse(savedNotificationSettings));
+        } catch (error) {
+          console.error("Error parsing notification settings:", error);
+        }
+      }
+    }
+  }, []);
+
+  // Save to localStorage when state changes
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("user-profile", JSON.stringify(userProfile));
+    }
+  }, [userProfile]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("app-settings", JSON.stringify(appSettings));
+    }
+  }, [appSettings]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("privacy-settings", JSON.stringify(privacySettings));
+    }
+  }, [privacySettings]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem(
+        "notification-settings",
+        JSON.stringify(notificationSettings)
+      );
+    }
+  }, [notificationSettings]);
 
   const handleProfileUpdate = () => {
     // In a real app, this would make an API call
@@ -321,7 +392,7 @@ export default function SettingsPage() {
                   <Input
                     id="dateOfBirth"
                     type="date"
-                    value={userProfile.dateOfBirth}
+                    value={userProfile.dateOfBirth || ""}
                     onChange={(e) =>
                       setUserProfile({
                         ...userProfile,
@@ -335,7 +406,7 @@ export default function SettingsPage() {
                   <Input
                     id="phone"
                     type="tel"
-                    value={userProfile.phone}
+                    value={userProfile.phone || ""}
                     onChange={(e) =>
                       setUserProfile({ ...userProfile, phone: e.target.value })
                     }
@@ -348,7 +419,7 @@ export default function SettingsPage() {
                 <Label htmlFor="bio">Bio</Label>
                 <Textarea
                   id="bio"
-                  value={userProfile.bio}
+                  value={userProfile.bio || ""}
                   onChange={(e) =>
                     setUserProfile({ ...userProfile, bio: e.target.value })
                   }
@@ -564,40 +635,6 @@ export default function SettingsPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label>Theme</Label>
-                <Select
-                  value={appSettings.theme}
-                  onValueChange={(value) =>
-                    setAppSettings({ ...appSettings, theme: value as any })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="light">
-                      <div className="flex items-center">
-                        <Sun className="h-4 w-4 mr-2" />
-                        Light
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="dark">
-                      <div className="flex items-center">
-                        <Moon className="h-4 w-4 mr-2" />
-                        Dark
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="system">
-                      <div className="flex items-center">
-                        <Smartphone className="h-4 w-4 mr-2" />
-                        System
-                      </div>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
               <div className="space-y-2">
                 <Label>Language</Label>
                 <Select
@@ -1091,7 +1128,7 @@ export default function SettingsPage() {
               <Button variant="outline" className="w-full">
                 <FileText className="h-4 w-4 mr-2" />
                 View Privacy Policy
-                <ExternalLink className="h-4 w-4 ml-2" />
+                <ExternalLink className="h-4 w-4 ml-auto" />
               </Button>
             </CardContent>
           </Card>
