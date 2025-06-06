@@ -50,11 +50,7 @@ const UserSchema = new Schema<TUser>(
       required: false,
       trim: true,
     },
-    bio: {
-      type: String,
-      required: false,
-      maxlength: 500,
-    },
+
     avatar: {
       type: String,
       required: false,
@@ -63,17 +59,18 @@ const UserSchema = new Schema<TUser>(
       type: Boolean,
       default: false,
     },
-    twoFactorEnabled: {
-      type: Boolean,
-      default: false,
-    },
-    biometricEnabled: {
-      type: Boolean,
-      default: false,
-    },
+    // twoFactorEnabled: {
+    //   type: Boolean,
+    //   default: false,
+    // },
+    // biometricEnabled: {
+    //   type: Boolean,
+    //   default: false,
+    // },
   },
   {
     timestamps: true,
+    versionKey: false,
   }
 );
 UserSchema.pre("save", async function (next) {

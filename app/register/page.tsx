@@ -30,6 +30,8 @@ import {
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { createUser } from "@/actions/user.action";
+import { toast } from "react-toastify";
 
 interface PasswordRequirement {
   label: string;
@@ -151,28 +153,20 @@ export default function RegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-
+    const registerForm = new FormData();
+    registerForm.append("user", JSON.stringify(formData));
     if (!validateStep2()) return;
 
     setIsLoading(true);
 
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      const newUser = await createUser(registerForm);
+      console.log("🚀 ~ handleSubmit ~ newUser:", newUser);
 
-      // Store user data (in a real app, this would be handled by your auth system)
-      const userData = {
-        email: formData.email,
-        name: `${formData.firstName} ${formData.lastName}`,
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-      };
-      localStorage.setItem("user", JSON.stringify(userData));
-
-      // Redirect to dashboard
+      toast.success(newUser);
       router.push("/dashboard");
-    } catch (err) {
-      setError("An error occurred during registration. Please try again.");
+    } catch (err: any) {
+      toast.error(err.message);
     } finally {
       setIsLoading(false);
     }
@@ -499,7 +493,11 @@ export default function RegisterPage() {
                     <Button
                       type="submit"
                       className="flex-1 bg-pink-600 hover:bg-pink-700"
-                      disabled={isLoading}
+                      disabled={
+                        isLoading ||
+                        !formData.agreeToTerms ||
+                        !formData.agreeToPrivacy
+                      }
                     >
                       {isLoading ? "Creating Account..." : "Create Account"}
                     </Button>
