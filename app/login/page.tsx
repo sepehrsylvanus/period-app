@@ -18,6 +18,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Heart, Eye, EyeOff, Mail, Lock, AlertCircle } from "lucide-react";
+import { signIn } from "next-auth/react";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -201,6 +202,7 @@ export default function LoginPage() {
                   variant="outline"
                   className="w-full"
                   disabled={isLoading}
+                  onClick={() => signIn("google")}
                 >
                   <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
                     <path

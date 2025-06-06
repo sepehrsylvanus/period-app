@@ -28,7 +28,7 @@ const UserSchema = new Schema<TUser>(
     },
     password: {
       type: String,
-      required: true,
+      required: false,
       minlength: 8,
     },
     firstName: {
@@ -38,7 +38,7 @@ const UserSchema = new Schema<TUser>(
     },
     lastName: {
       type: String,
-      required: true,
+
       trim: true,
     },
     dateOfBirth: {
