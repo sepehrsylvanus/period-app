@@ -1,9 +1,10 @@
 import { connectToDB } from "@/lib/connectToDB";
-import User from "@/models/user.model";
+import User, { TUser } from "@/models/user.model";
 import NextAuth, { NextAuthOptions } from "next-auth";
 import Email from "next-auth/providers/email";
 import GoogleProvider from "next-auth/providers/google";
-
+import { cookies } from "next/headers";
+import jwt from "jsonwebtoken";
 const authOptions: NextAuthOptions = {
   providers: [
     GoogleProvider({
@@ -15,23 +16,40 @@ const authOptions: NextAuthOptions = {
     strategy: "jwt",
   },
   callbacks: {
-    async jwt({ token, user }) {
+    async session({ session, token, user }) {
+      const cookieStore = await cookies();
       await connectToDB();
-      if (user?.email) {
-        let dbUser = await User.findOne({ email: user.email });
+      const currentUser = await User.findOne({
+        email: session.user?.email,
+      }).lean<TUser>();
+      console.log("🚀 ~ session ~ currentUser:", currentUser);
 
-        if (!dbUser) {
-          dbUser = await User.create({
-            email: user.email,
-            firstName: user.name?.split(" ")[0],
-            lastName: user.name?.split(" ")[1],
-            avatar: user.image,
-            isEmailVerified: true,
-          });
-        }
-        token.userId = dbUser._id;
+      if (currentUser) {
+        const token = jwt.sign(
+          currentUser._id.toString(),
+          process.env.JWT_SECRET!
+        );
+        cookieStore.set("token", token, {
+          sameSite: "strict",
+        });
+      } else {
+        const newUser = await User.create({
+          email: session.user?.email,
+          firstName: session.user?.name?.split(" ")[0],
+          lastName: session.user?.name?.split(" ")[1],
+          avatar: session.user?.image,
+          isEmailVerified: true,
+        });
+        const token = jwt.sign(newUser._id.toString(), process.env.JWT_SECRET!);
+        cookieStore.set("token", token, {
+          sameSite: "strict",
+        });
       }
-      return token;
+      console.log({ session, token, user });
+      return session;
+    },
+    async redirect({ url, baseUrl }) {
+      return `${baseUrl}/dashboard`;
     },
   },
 };
