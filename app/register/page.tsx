@@ -547,7 +547,11 @@ export default function RegisterPage() {
                       </svg>
                       Google
                     </Button>
-                    <Button variant="outline" className="w-full">
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => signIn("facebook")}
+                    >
                       <svg
                         className="mr-2 h-4 w-4 fill-current"
                         viewBox="0 0 24 24"

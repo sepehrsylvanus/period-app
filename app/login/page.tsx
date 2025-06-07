@@ -228,6 +228,7 @@ export default function LoginPage() {
                   variant="outline"
                   className="w-full"
                   disabled={isLoading}
+                  onClick={() => signIn("facebook")}
                 >
                   <svg
                     className="mr-2 h-4 w-4 fill-current"

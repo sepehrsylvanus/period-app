@@ -3,6 +3,8 @@ import User, { TUser } from "@/models/user.model";
 import NextAuth, { NextAuthOptions } from "next-auth";
 import Email from "next-auth/providers/email";
 import GoogleProvider from "next-auth/providers/google";
+import FacebookProvider from "next-auth/providers/facebook";
+
 import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
 const authOptions: NextAuthOptions = {
@@ -11,18 +13,22 @@ const authOptions: NextAuthOptions = {
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     }),
+    FacebookProvider({
+      clientId: process.env.FACEBOOK_CLIENT_ID!,
+      clientSecret: process.env.FACEBOOK_CLIENT_SECRET!,
+    }),
   ],
   session: {
     strategy: "jwt",
   },
   callbacks: {
     async session({ session, token, user }) {
+      console.log({ session, token: token.provider, user });
       const cookieStore = await cookies();
       await connectToDB();
       const currentUser = await User.findOne({
         email: session.user?.email,
       }).lean<TUser>();
-      console.log("🚀 ~ session ~ currentUser:", currentUser);
 
       if (currentUser) {
         const token = jwt.sign(
@@ -48,6 +54,7 @@ const authOptions: NextAuthOptions = {
       console.log({ session, token, user });
       return session;
     },
+
     async redirect({ url, baseUrl }) {
       return `${baseUrl}/dashboard`;
     },
