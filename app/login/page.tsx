@@ -19,6 +19,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Heart, Eye, EyeOff, Mail, Lock, AlertCircle } from "lucide-react";
 import { signIn } from "next-auth/react";
+import { toast } from "react-toastify";
+import { login } from "@/actions/auth.action";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -46,24 +48,14 @@ export default function LoginPage() {
 
     // Simulate API call
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // Simple validation for demo
-      if (
-        formData.email === "demo@example.com" &&
-        formData.password === "password"
-      ) {
-        // Store user session (in a real app, this would be handled by your auth system)
-        localStorage.setItem(
-          "user",
-          JSON.stringify({ email: formData.email, name: "Demo User" })
-        );
-        router.push("/dashboard");
-      } else {
-        setError("Invalid email or password. Try demo@example.com / password");
-      }
-    } catch (err) {
-      setError("An error occurred. Please try again.");
+      const loginForm = new FormData();
+      loginForm.append("email", formData.email);
+      loginForm.append("password", formData.password);
+      const response = await login(loginForm);
+      toast.success(response);
+      router.push("/dashboard");
+    } catch (err: any) {
+      toast.error(err.message);
     } finally {
       setIsLoading(false);
     }
