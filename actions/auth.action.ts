@@ -31,3 +31,9 @@ export const login = async (data: FormData) => {
     throw new Error(error.message);
   }
 };
+export const decodeToken = async () => {
+  const cookieStore = await cookies();
+  const token = cookieStore.get("token")?.value as string;
+  const decodedToken = jwt.decode(token);
+  return decodedToken;
+};

@@ -2,9 +2,9 @@
 
 import type React from "react";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   Calendar,
@@ -17,19 +17,48 @@ import {
   X,
   LogOut,
   Home,
+  Loader,
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
-
+import { useGetUser } from "@/hooks/useUser";
+import { decodeToken } from "@/actions/auth.action";
+import { signOut } from "next-auth/react";
+import Cookie from "js-cookie";
+import { toast } from "react-toastify";
+import { motion } from "framer-motion";
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const router = useRouter();
+  const [token, setToken] = useState("");
+  const {
+    data: currentUser,
+    refetch: currentUserRefetch,
+    isLoading: currentUserLoading,
+  } = useGetUser(token);
+  console.log("🚀 ~ currentUser:", currentUser);
+  useEffect(() => {
+    const func = async () => {
+      const token = (await decodeToken()) as string;
+      setToken(token);
+      currentUserRefetch();
+    };
+    func();
+  }, []);
+
   const pathname = usePathname();
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
 
+  const handleSignOut = async () => {
+    await signOut();
+    await Cookie.remove("token");
+    toast.success("User signed out successfully");
+    window.location.href = "/";
+  };
   const routes = [
     {
       href: "/dashboard",
@@ -102,30 +131,39 @@ export default function DashboardLayout({
           ))}
         </nav>
         <div className="p-4 border-t">
-          <div className="flex items-center gap-3 mb-4">
-            <Avatar>
-              <AvatarImage src="/placeholder-user.jpg" />
-              <AvatarFallback className="bg-pink-100 text-pink-700">
-                US
-              </AvatarFallback>
-            </Avatar>
-            <div>
-              <p className="text-sm font-medium">User Name</p>
-              <p className="text-xs text-gray-500">user@example.com</p>
+          {currentUserLoading ? (
+            <div className="flex justify-center">
+              <Loader className="text-[#DB2777] animate-spin" />
             </div>
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-full justify-start gap-2"
-            onClick={() => {
-              localStorage.removeItem("user");
-              window.location.href = "/login";
-            }}
-          >
-            <LogOut className="h-4 w-4" />
-            Sign Out
-          </Button>
+          ) : (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, ease: "easeInOut" }}
+            >
+              <div className="flex items-center gap-3 mb-4 animate-in">
+                <Avatar>
+                  <AvatarImage src="/placeholder-user.jpg" />
+                  <AvatarFallback className="bg-pink-100 text-pink-700">
+                    {`${currentUser?.firstName[0]}${currentUser?.lastName[0]}`}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="text-sm font-medium">{`${currentUser?.firstName} ${currentUser?.lastName}`}</p>
+                  <p className="text-xs text-gray-500">{currentUser?.email}</p>
+                </div>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full justify-start gap-2"
+                onClick={() => handleSignOut()}
+              >
+                <LogOut className="h-4 w-4" />
+                Sign Out
+              </Button>
+            </motion.div>
+          )}
         </div>
       </aside>
 
@@ -188,24 +226,23 @@ export default function DashboardLayout({
               <div className="p-4 border-t">
                 <div className="flex items-center gap-3 mb-4">
                   <Avatar>
-                    <AvatarImage src="/placeholder-user.jpg" />
+                    <AvatarImage src={currentUser?.avatar} />
                     <AvatarFallback className="bg-pink-100 text-pink-700">
-                      US
+                      {`${currentUser?.firstName[0]}${currentUser?.lastName[0]}`}
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <p className="text-sm font-medium">User Name</p>
-                    <p className="text-xs text-gray-500">user@example.com</p>
+                    <p className="text-sm font-medium">{`${currentUser?.firstName} ${currentUser?.lastName}`}</p>
+                    <p className="text-xs text-gray-500">
+                      {currentUser?.email}
+                    </p>
                   </div>
                 </div>
                 <Button
                   variant="outline"
                   size="sm"
                   className="w-full justify-start gap-2"
-                  onClick={() => {
-                    localStorage.removeItem("user");
-                    window.location.href = "/login";
-                  }}
+                  onClick={() => handleSignOut()}
                 >
                   <LogOut className="h-4 w-4" />
                   Sign Out

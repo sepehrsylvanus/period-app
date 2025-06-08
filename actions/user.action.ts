@@ -1,7 +1,8 @@
 "use server";
 
 import { connectToDB } from "@/lib/connectToDB";
-import User from "@/models/user.model";
+import { serializeMongoId } from "@/lib/helperFUnctions";
+import User, { TUser } from "@/models/user.model";
 import jwt from "jsonwebtoken";
 import { cookies } from "next/headers";
 export const createUser = async (data: FormData) => {
@@ -18,6 +19,15 @@ export const createUser = async (data: FormData) => {
       httpOnly: true,
     });
     return `${newUser.firstName} ${newUser.lastName} has created successfully`;
+  } catch (error: any) {
+    throw new Error(error.message);
+  }
+};
+export const getUser = async (id: string) => {
+  try {
+    const user = await User.findById(id).lean<TUser>();
+    const safeUser = await serializeMongoId(user);
+    return safeUser;
   } catch (error: any) {
     throw new Error(error.message);
   }
