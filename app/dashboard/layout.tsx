@@ -34,17 +34,17 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const [token, setToken] = useState("");
+  const [userId, setUserId] = useState("");
   const {
     data: currentUser,
     refetch: currentUserRefetch,
     isLoading: currentUserLoading,
-  } = useGetUser(token);
+  } = useGetUser(userId);
   console.log("🚀 ~ currentUser:", currentUser);
   useEffect(() => {
     const func = async () => {
       const token = (await decodeToken()) as string;
-      setToken(token);
+      setUserId(token);
       currentUserRefetch();
     };
     func();

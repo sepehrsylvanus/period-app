@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   Card,
   CardContent,
@@ -55,18 +55,17 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { TPerioDay } from "@/models/peiodDay.model";
-import { useGetPeriodDays } from "@/hooks/usePeriodDay";
-import { useGetCycleDatas } from "@/hooks/useCycleData";
-import { decodeToken } from "@/actions/auth.action";
-import { TCylcleData } from "@/models/cycleData.model";
-import { TSymptom } from "@/models/symptoms.model";
-import { useGetSymptoms } from "@/hooks/useSymptom";
 
 // Types
+interface PeriodDay {
+  date: Date;
+  flow: "light" | "medium" | "heavy" | null;
+  symptoms: string[];
+  notes: string;
+}
 
 interface CycleData {
-  periods: TPerioDay[];
+  periods: PeriodDay[];
   symptoms: {
     date: Date;
     type: string;
@@ -74,6 +73,76 @@ interface CycleData {
     notes: string;
   }[];
 }
+
+// Initial data
+const initialCycleData: CycleData = {
+  periods: [
+    {
+      date: new Date(2024, 0, 15),
+      flow: "medium" as const,
+      symptoms: ["cramps", "bloating"],
+      notes: "Moderate flow day",
+    },
+    {
+      date: new Date(2024, 0, 16),
+      flow: "heavy" as const,
+      symptoms: ["cramps"],
+      notes: "Heavy flow day",
+    },
+    {
+      date: new Date(2024, 0, 17),
+      flow: "light" as const,
+      symptoms: ["fatigue"],
+      notes: "Light flow day",
+    },
+  ],
+  symptoms: [
+    {
+      date: new Date(2025, 5, 3),
+      type: "cramps",
+      intensity: 7,
+      notes: "Severe cramps in the morning",
+    },
+    {
+      date: new Date(2025, 5, 3),
+      type: "headache",
+      intensity: 5,
+      notes: "Mild headache in the afternoon",
+    },
+    {
+      date: new Date(2025, 5, 2),
+      type: "cramps",
+      intensity: 8,
+      notes: "Needed pain medication",
+    },
+    { date: new Date(2025, 5, 2), type: "bloating", intensity: 6, notes: "" },
+    { date: new Date(2025, 5, 1), type: "cramps", intensity: 6, notes: "" },
+    {
+      date: new Date(2025, 5, 1),
+      type: "fatigue",
+      intensity: 7,
+      notes: "Very tired all day",
+    },
+    {
+      date: new Date(2025, 4, 20),
+      type: "mood",
+      intensity: 8,
+      notes: "Feeling irritable",
+    },
+    {
+      date: new Date(2025, 4, 19),
+      type: "mood",
+      intensity: 7,
+      notes: "Mood swings",
+    },
+    {
+      date: new Date(2025, 4, 18),
+      type: "acne",
+      intensity: 6,
+      notes: "Breakout on chin",
+    },
+  ],
+};
 
 // Symptom data for radar chart
 const symptomData = [
@@ -96,33 +165,16 @@ const cycleData = [
 ];
 
 export default function Dashboard() {
-  const [userId, setUserId] = useState("");
-  useEffect(() => {
-    const func = async () => {
-      const userId = (await decodeToken()) as string;
-      setUserId(userId);
-    };
-    func();
-  }, []);
-
-  const { data: symptoms, isLoading: symptomsLoading } = useGetSymptoms();
-  const periodSymptoms = symptoms?.map((symptom) => symptom.type);
-  const uniqueSymptoms = [...new Set(periodSymptoms)];
-
-  const { data: cycleDatas = [], isLoading: cycleDatasLoading } =
-    useGetCycleDatas();
-  const initialCycleData = cycleDatas.filter(
-    (cycleData) => cycleData.user._id === userId
-  )[0];
-  const { data: periodDays, isLoading: periodDaysLoading } = useGetPeriodDays();
   const [date, setDate] = useState<Date>(new Date());
-  const [cycleDataState, setCycleData] =
-    useState<TCylcleData>(initialCycleData);
+  const [cycleDataState, setCycleData] = useLocalStorage<CycleData>(
+    "cycle-data",
+    initialCycleData
+  );
   const [isAddPeriodOpen, setIsAddPeriodOpen] = useState(false);
   const [newPeriodFlow, setNewPeriodFlow] = useState<
     "light" | "medium" | "heavy"
   >("medium");
-  const [newPeriodSymptoms, setNewPeriodSymptoms] = useState<TSymptom[]>([]);
+  const [newPeriodSymptoms, setNewPeriodSymptoms] = useState<string[]>([]);
   const [newPeriodNotes, setNewPeriodNotes] = useState("");
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
@@ -147,7 +199,7 @@ export default function Dashboard() {
   const handleAddPeriod = () => {
     if (!selectedDate) return;
 
-    const newPeriodDay: Omit<TPerioDay, "_id" | "user"> = {
+    const newPeriodDay: PeriodDay = {
       date: selectedDate,
       flow: newPeriodFlow,
       symptoms: newPeriodSymptoms,
@@ -159,18 +211,18 @@ export default function Dashboard() {
       isSameDay(new Date(p.date), selectedDate)
     );
 
-    // if (existingIndex >= 0) {
-    //   // Update existing entry
-    //   const updatedPeriods = [...cycleDataState.periods];
-    //   updatedPeriods[existingIndex] = newPeriodDay;
-    //   setCycleData({ ...cycleDataState, periods: updatedPeriods });
-    // } else {
-    //   // Add new entry
-    //   setCycleData({
-    //     ...cycleDataState,
-    //     periods: [...cycleDataState.periods, newPeriodDay],
-    //   });
-    // }
+    if (existingIndex >= 0) {
+      // Update existing entry
+      const updatedPeriods = [...cycleDataState.periods];
+      updatedPeriods[existingIndex] = newPeriodDay;
+      setCycleData({ ...cycleDataState, periods: updatedPeriods });
+    } else {
+      // Add new entry
+      setCycleData({
+        ...cycleDataState,
+        periods: [...cycleDataState.periods, newPeriodDay],
+      });
+    }
 
     setIsAddPeriodOpen(false);
     resetPeriodForm();
@@ -369,7 +421,7 @@ export default function Dashboard() {
                       <Badge
                         key={symptom}
                         variant={
-                          uniqueSymptoms.includes(symptom)
+                          newPeriodSymptoms.includes(symptom)
                             ? "default"
                             : "outline"
                         }
