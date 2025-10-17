@@ -28,6 +28,7 @@ import { signOut } from "next-auth/react";
 import Cookie from "js-cookie";
 import { toast } from "react-toastify";
 import { motion } from "framer-motion";
+import { connectToDB } from "@/lib/connectToDB";
 export default function DashboardLayout({
   children,
 }: {
